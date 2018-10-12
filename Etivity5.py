@@ -12,42 +12,45 @@ import matplotlib.pyplot as plt
 from numpy.linalg import eig
 from sklearn.decomposition import PCA
 
-# below are imports from the 
-from numpy import array
-from numpy import mean
-from numpy import cov
         
 class Log:
     DEBUG = 1
     INFO = 2
+    ERROR = 3
+
 
 class My_pca:
+    """
+    Perform the PCA on a dataset
+    
+    There is a lot of log statements in this class. I intend to remove
+    them in the final code. Leaving them in place for the time being as they
+    are useful for debugging. 
+    
+    BUG ALERT
+    =========
+    The eigen values calculated by this class match the ones calculated by 
+    scikit. 
+    
+    However, it appears that one of the eigen vectors is the negative version 
+    of the one calculted by scikit. Currently investigating the reason behind 
+    this.
+        
+    """
 
-    log_level = Log.INFO
+    log_level = Log.ERROR
+    nb_components = 2
+    eigen_values = []
+    eigen_vectors = []
 
-    def __init__(self, nb_components):
+
+    def __init__(self):
         """ init """
-        self.nb_components = nb_components;
 
 
     def __log__(self, message, level=Log.INFO):
         if level >= self.log_level:
             print(message)
-
-
-    def scikit_pca(self, matrix):
-        pca = PCA(n_components=2)
-        pca.fit(matrix)
-        self.__log__(("="*80))
-        self.__log__("pca.explained_variance_:      \n{}".format(pca.explained_variance_))
-        self.__log__("pca.components_:              \n{}".format(pca.components_))
-        self.__log__("pca.explained_variance_ratio_:\n{}".format(pca.explained_variance_ratio_), Log.DEBUG)
-        self.__log__("pca.singular_values_:         \n{}".format(pca.singular_values_), Log.DEBUG)
-        self.__log__("pca.mean_:                    \n{}".format(pca.mean_), Log.DEBUG)
-        self.__log__("pca.n_components_:            \n{}".format(pca.n_components_), Log.DEBUG)
-        self.__log__("pca.noise_variance_:          \n{}".format(pca.noise_variance_), Log.DEBUG)
-
-        return pca
 
         
     def fit(self, matrix):
@@ -75,20 +78,38 @@ class My_pca:
         self.__log__("centered_matrix:\n{}".format(c_matrix), Log.DEBUG)
         
         # Calculate covariance of centered matrix
-        my_cov = np.cov(c_matrix.T)
+        my_cov = np.cov(c_matrix, rowvar=False)        
         self.__log__("covariance:\n{}".format(my_cov), Log.DEBUG)
     
         # eigen values, eigen vectors
-        values, vectors = eig(my_cov)
-        self.__log__("eigenvalues:\n{}".format(values))
-        self.__log__("eigenvectors:\n{}".format(vectors))     
+        eigen_values, eigen_vectors = eig(my_cov)
+        self.__log__("eigen_values:\n{}".format(eigen_values))
+        self.__log__("eigen_vectors:\n{}".format(eigen_vectors))     
         
-        P = vectors.T.dot(c_matrix.T)        
+        # order eigen values and eigen vectors       
+        sorted_eigen_values_indexes = eigen_values.argsort()[::-1]
+        sorted_eigen_values = eigen_values[sorted_eigen_values_indexes]
+        sorted_eigen_vectors = eigen_vectors[sorted_eigen_values_indexes] 
+        self.__log__("sorted_eigen_values_indexes:\n{}".format(sorted_eigen_values_indexes))
+        self.__log__("sorted_eigen_values:\n{}".format(sorted_eigen_values))
+        self.__log__("sorted_eigen_vectors:\n{}".format(sorted_eigen_vectors))
+
+        # use nb_components to decide how many eigen vectors to keep
+        filtered_sorted_eigen_values = sorted_eigen_values[:self.nb_components]
+        filtered_sorted_eigen_vectors = sorted_eigen_vectors[:self.nb_components] 
+        self.__log__("filtered_sorted_eigen_values:\n{}".format(sorted_eigen_values))
+        self.__log__("filtered_sorted_eigen_vectors:\n{}".format(sorted_eigen_vectors))
+        
+        # calculate projection of dataset onto the eigen vector basis
+        P = eigen_vectors.T.dot(c_matrix.T)        
         self.__log__("projected  :\n{}".format(P.T), Log.DEBUG)
         
-        #TODO: order the eigen vectors using the eigenvalues
-        #TODO: return a tuple
+        # save results as class variables
+        self.eigen_values = filtered_sorted_eigen_values
+        self.eigen_vectors = filtered_sorted_eigen_vectors
+        self.projection = P
     
+
   
 def build_dataset():
     a_x = 0.05
@@ -100,17 +121,56 @@ def build_dataset():
     print(data.shape)
     return data
 
+
+def scikit_pca( matrix, nb_components):
+    pca = PCA(nb_components)
+    pca.fit(matrix)
+    #print(("="*80))
+    #print("pca.explained_variance_:      \n{}".format(pca.explained_variance_))
+    #print("pca.components_:              \n{}".format(pca.components_))
+    #print("pca.explained_variance_ratio_:\n{}".format(pca.explained_variance_ratio_), Log.DEBUG)
+    #print("pca.singular_values_:         \n{}".format(pca.singular_values_), Log.DEBUG)
+    #print("pca.mean_:                    \n{}".format(pca.mean_), Log.DEBUG)
+    #print("pca.n_components_:            \n{}".format(pca.n_components_), Log.DEBUG)
+    #print("pca.noise_variance_:          \n{}".format(pca.noise_variance_), Log.DEBUG)
+
+    return pca
+
       
 def test():
 
     data = build_dataset()
-    my_pca = My_pca(data)
+    my_pca = My_pca()
 
-    # Calculate PCA using scikit    
-    my_pca.scikit_pca(data)
+    # Calculate PCA using scikit, nb_components=2
+    pca = scikit_pca(data, 2)
+    print()
+    print("scikit.pca with nb_components=2")
+    print("eigen_values:", pca.explained_variance_)
+    print("eigen_vectors:", pca.components_)
 
-    # Calculate PCA using My_pca
+    # Calculate PCA using scikit, nb_components=1
+    pca = scikit_pca(data, 1)
+    print()
+    print("scikit.pca with nb_components=1")
+    print("eigen_values:", pca.explained_variance_)
+    print("eigen_vectors:", pca.components_)
+
+    # Calculate PCA using homebrew code, nb_components=2
+    my_pca.nb_components=2
     my_pca.fit(data)
+    print()
+    print("pca homebrew nb_components=", my_pca.nb_components)
+    print("eigen_values:", my_pca.eigen_values)
+    print("eigen_vectors:", my_pca.eigen_vectors)
+    
+    # Calculate PCA using homebrew code, nb_components=1
+    my_pca.nb_components=1
+    my_pca.fit(data)
+    print()
+    print("pca homebrew nb_components=", my_pca.nb_components)
+    print("eigen_values:", my_pca.eigen_values)
+    print("eigen_vectors:", my_pca.eigen_vectors)
 
 test()
 
