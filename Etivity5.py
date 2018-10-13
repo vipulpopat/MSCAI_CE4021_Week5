@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Oct 11 12:50:18 2018
-
-@author: michel
-"""
+%reset
 
 import numpy as np
 import random as rand
@@ -49,6 +43,9 @@ class My_pca:
 
 
     def __log__(self, message, level=Log.INFO):
+        """
+        Log a message only if its log level is equal or superior to self.log_level
+        """
         if level >= self.log_level:
             print(message)
 
@@ -101,17 +98,34 @@ class My_pca:
         self.__log__("filtered_sorted_eigen_vectors:\n{}".format(sorted_eigen_vectors))
         
         # calculate projection of dataset onto the eigen vector basis
-        P = eigen_vectors.T.dot(c_matrix.T)        
-        self.__log__("projected  :\n{}".format(P.T), Log.DEBUG)
+        #P = eigen_vectors.T.dot(c_matrix.T)        
+        #self.__log__("projected  :\n{}".format(P.T), Log.DEBUG)
         
         # save results as class variables
         self.eigen_values = filtered_sorted_eigen_values
         self.eigen_vectors = filtered_sorted_eigen_vectors
-        self.projection = P
+            
     
-
-  
+    def transform(self, data):
+        """
+        Calculate projection of dataset onto the eigen vector basis
+        
+        BUG:
+        This method does work yet...
+        """
+        self.fit(data)
+        self.projection = self.eigen_vectors.T.dot(data.T)
+        
+        self.__log__("eigen_values:\n{}".format(self.eigen_values), Log.DEBUG)
+        self.__log__("eigen_vectors:\n{}".format(self.eigen_vectors), Log.DEBUG)
+        self.__log__("projected  :\n{}".format(self.projection), Log.DEBUG)
+        
+        
+        
 def build_dataset():
+    """
+    Create a dataset
+    """
     a_x = 0.05
     a_y= 10
 
@@ -123,23 +137,17 @@ def build_dataset():
 
 
 def scikit_pca( matrix, nb_components):
+    """
+    Calculate the PCA using Scikit APIs
+    """
     pca = PCA(nb_components)
     pca.fit(matrix)
-    #print(("="*80))
-    #print("pca.explained_variance_:      \n{}".format(pca.explained_variance_))
-    #print("pca.components_:              \n{}".format(pca.components_))
-    #print("pca.explained_variance_ratio_:\n{}".format(pca.explained_variance_ratio_), Log.DEBUG)
-    #print("pca.singular_values_:         \n{}".format(pca.singular_values_), Log.DEBUG)
-    #print("pca.mean_:                    \n{}".format(pca.mean_), Log.DEBUG)
-    #print("pca.n_components_:            \n{}".format(pca.n_components_), Log.DEBUG)
-    #print("pca.noise_variance_:          \n{}".format(pca.noise_variance_), Log.DEBUG)
 
     return pca
 
       
 def test():
 
-    data = build_dataset()
     my_pca = My_pca()
 
     # Calculate PCA using scikit, nb_components=2
@@ -148,6 +156,7 @@ def test():
     print("scikit.pca with nb_components=2")
     print("eigen_values:", pca.explained_variance_)
     print("eigen_vectors:", pca.components_)
+    print("transformed_data:", pca.transform(data))
 
     # Calculate PCA using scikit, nb_components=1
     pca = scikit_pca(data, 1)
@@ -155,6 +164,7 @@ def test():
     print("scikit.pca with nb_components=1")
     print("eigen_values:", pca.explained_variance_)
     print("eigen_vectors:", pca.components_)
+    print("transformed_data:", pca.transform(data))
 
     # Calculate PCA using homebrew code, nb_components=2
     my_pca.nb_components=2
@@ -162,8 +172,8 @@ def test():
     print()
     print("pca homebrew nb_components=", my_pca.nb_components)
     print("eigen_values:", my_pca.eigen_values)
-    print("eigen_vectors:", my_pca.eigen_vectors)
-    
+    print("eigen_vectors:", my_pca.eigen_vectors)  
+        
     # Calculate PCA using homebrew code, nb_components=1
     my_pca.nb_components=1
     my_pca.fit(data)
@@ -171,6 +181,21 @@ def test():
     print("pca homebrew nb_components=", my_pca.nb_components)
     print("eigen_values:", my_pca.eigen_values)
     print("eigen_vectors:", my_pca.eigen_vectors)
+    
+    # Calculate transformation using homebrew code, nb_coomponent=2
+    my_pca.nb_components=2
+    my_pca.transform(data)
+    print()
+    print("Transform using homebrew code, nb_components=", my_pca.nb_components)
+    print("Transform:", my_pca.projection)
+    
+    # Calculate transformation using homebrew code, nb_coomponent=1
+    my_pca.nb_components=1
+    #my_pca.transform(data)
+    #print()
+    #print("Transform using homebrew code, nb_components=", my_pca.nb_components)
+    #print("Transform:", my_pca.projection)
+    
 
+data = build_dataset()    
 test()
-
