@@ -1,4 +1,3 @@
-%reset
 
 import numpy as np
 import random as rand
@@ -10,7 +9,7 @@ from sklearn.decomposition import PCA
 class Log:
     DEBUG = 1
     INFO = 2
-    ERROR = 3
+    ALWAYS_SHOW = 3
 
 
 class My_pca:
@@ -32,7 +31,7 @@ class My_pca:
         
     """
 
-    log_level = Log.ERROR
+    log_level = Log.ALWAYS_SHOW
     nb_components = 2
     eigen_values = []
     eigen_vectors = []
@@ -80,22 +79,22 @@ class My_pca:
     
         # eigen values, eigen vectors
         eigen_values, eigen_vectors = eig(my_cov)
-        self.__log__("eigen_values:\n{}".format(eigen_values))
-        self.__log__("eigen_vectors:\n{}".format(eigen_vectors))     
+        self.__log__("eigen_values:\n{}".format(eigen_values), Log.INFO)
+        self.__log__("eigen_vectors:\n{}".format(eigen_vectors), Log.INFO)     
         
         # order eigen values and eigen vectors       
         sorted_eigen_values_indexes = eigen_values.argsort()[::-1]
         sorted_eigen_values = eigen_values[sorted_eigen_values_indexes]
         sorted_eigen_vectors = eigen_vectors[sorted_eigen_values_indexes] 
-        self.__log__("sorted_eigen_values_indexes:\n{}".format(sorted_eigen_values_indexes))
-        self.__log__("sorted_eigen_values:\n{}".format(sorted_eigen_values))
-        self.__log__("sorted_eigen_vectors:\n{}".format(sorted_eigen_vectors))
+        self.__log__("sorted_eigen_values_indexes:\n{}".format(sorted_eigen_values_indexes), Log.DEBUG)
+        self.__log__("sorted_eigen_values:\n{}".format(sorted_eigen_values), Log.DEBUG)
+        self.__log__("sorted_eigen_vectors:\n{}".format(sorted_eigen_vectors), Log.DEBUG)
 
         # use nb_components to decide how many eigen vectors to keep
         filtered_sorted_eigen_values = sorted_eigen_values[:self.nb_components]
         filtered_sorted_eigen_vectors = sorted_eigen_vectors[:self.nb_components] 
-        self.__log__("filtered_sorted_eigen_values:\n{}".format(sorted_eigen_values))
-        self.__log__("filtered_sorted_eigen_vectors:\n{}".format(sorted_eigen_vectors))
+        self.__log__("filtered_sorted_eigen_values:\n{}".format(sorted_eigen_values), Log.INFO)
+        self.__log__("filtered_sorted_eigen_vectors:\n{}".format(sorted_eigen_vectors), Log.INFO)
         
         # calculate projection of dataset onto the eigen vector basis
         #P = eigen_vectors.T.dot(c_matrix.T)        
@@ -114,13 +113,21 @@ class My_pca:
         This method does work yet...
         """
         self.fit(data)
+        
+        self.__log__("eigen_values shape:{}".format(self.eigen_values.shape), Log.INFO)
+        self.__log__("eigen_values:\n{}".format(self.eigen_values), Log.INFO)
+        
+        self.__log__("eigen_vectors shape:\n{}".format(self.eigen_vectors.shape), Log.INFO)
+        self.__log__("eigen_vectors:\n{}".format(self.eigen_vectors), Log.INFO)
+        
         self.projection = self.eigen_vectors.T.dot(data.T)
         
-        self.__log__("eigen_values:\n{}".format(self.eigen_values), Log.DEBUG)
-        self.__log__("eigen_vectors:\n{}".format(self.eigen_vectors), Log.DEBUG)
-        self.__log__("projected  :\n{}".format(self.projection), Log.DEBUG)
+        self.__log__("projected shape :\n{}".format(self.projection.shape), Log.INFO)
+        self.__log__("projected  :\n{}".format(self.projection), Log.INFO)
         
-        
+        plt.plot(data[:,0], data[:,1], 'bo')
+        plt.plot(self.projection[:,0], self.projection[:,1], 'xr')
+        plt.show()
         
 def build_dataset():
     """
@@ -131,7 +138,7 @@ def build_dataset():
 
     data =  np.matrix([[n*(1+a_x*(rand.random()-0.5)),4*n+ a_y*(rand.random()-0.5)] for n in range(20)])
 
-    print(data)
+    print("Data:\n", data)
     print(data.shape)
     return data
 
@@ -142,7 +149,13 @@ def scikit_pca( matrix, nb_components):
     """
     pca = PCA(nb_components)
     pca.fit(matrix)
-
+    projection = pca.transform(matrix)
+    
+    if nb_components == 2:
+        plt.plot(data[:,0], data[:,1], 'bo')
+        plt.plot(projection[:,0], projection[:,1], 'xr')
+        plt.show()
+        
     return pca
 
       
@@ -152,49 +165,39 @@ def test():
 
     # Calculate PCA using scikit, nb_components=2
     pca = scikit_pca(data, 2)
-    print()
-    print("scikit.pca with nb_components=2")
-    print("eigen_values:", pca.explained_variance_)
-    print("eigen_vectors:", pca.components_)
-    print("transformed_data:", pca.transform(data))
+    print("="*80)
+    print("Scikit.pca with nb_components=2\n")
+    print("Eigen_values:", pca.explained_variance_)
+    print("Eigen_vectors:", pca.components_)
+    print("Transformed_data:", pca.transform(data))
 
     # Calculate PCA using scikit, nb_components=1
     pca = scikit_pca(data, 1)
-    print()
-    print("scikit.pca with nb_components=1")
-    print("eigen_values:", pca.explained_variance_)
-    print("eigen_vectors:", pca.components_)
-    print("transformed_data:", pca.transform(data))
-
+    print("="*80)
+    print("Scikit.pca with nb_components=1\n")
+    print("Eigen_values:", pca.explained_variance_)
+    print("Eigen_vectors:", pca.components_)
+    print("Transformed_data:", pca.transform(data))  
+    
+    
     # Calculate PCA using homebrew code, nb_components=2
     my_pca.nb_components=2
     my_pca.fit(data)
-    print()
-    print("pca homebrew nb_components=", my_pca.nb_components)
-    print("eigen_values:", my_pca.eigen_values)
-    print("eigen_vectors:", my_pca.eigen_vectors)  
+    print("="*80)
+    print("PCA Homebrew nb_components=", my_pca.nb_components, "\n")
+    print("Eigen_values:", my_pca.eigen_values)
+    print("Eigen_vectors:", my_pca.eigen_vectors)  
+    my_pca.transform(data)
+    print("Transform:", my_pca.projection)
         
     # Calculate PCA using homebrew code, nb_components=1
     my_pca.nb_components=1
     my_pca.fit(data)
-    print()
-    print("pca homebrew nb_components=", my_pca.nb_components)
-    print("eigen_values:", my_pca.eigen_values)
-    print("eigen_vectors:", my_pca.eigen_vectors)
-    
-    # Calculate transformation using homebrew code, nb_coomponent=2
-    my_pca.nb_components=2
-    my_pca.transform(data)
-    print()
-    print("Transform using homebrew code, nb_components=", my_pca.nb_components)
-    print("Transform:", my_pca.projection)
-    
-    # Calculate transformation using homebrew code, nb_coomponent=1
-    my_pca.nb_components=1
-    #my_pca.transform(data)
-    #print()
-    #print("Transform using homebrew code, nb_components=", my_pca.nb_components)
-    #print("Transform:", my_pca.projection)
+    print("="*80)
+    print("PCA Homebrew nb_components=", my_pca.nb_components, "\n")
+    print("Eigen_values:", my_pca.eigen_values)
+    print("Eigen_vectors:", my_pca.eigen_vectors)
+    print("Transform:", "N/A")
     
 
 data = build_dataset()    
