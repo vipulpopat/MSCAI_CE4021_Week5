@@ -21,8 +21,8 @@ class My_pca:
     """
     Perform the PCA on a dataset
 
-    This class provide methods for calculating the fit() and transform()
-    of a dataset.
+    This class provides PCA method for calculating the fit(), transform() 
+    and inverse() on a dataset.
 
     This class is aimed at comparing 2 types of approaches:
         1) The Scikit approach which is leveraging the SVD algorithm
@@ -97,11 +97,11 @@ class My_pca:
         self.matrix = matrix
 
         # Calculate mean values of each column from dataset
-        m = np.mean(self.matrix.T, axis=1)
+        self.m = np.mean(self.matrix.T, axis=1)
 
         # Center the columns by subtracting the corresponding mean
         self.c_matrix = []
-        self.c_matrix = self.matrix - m.T
+        self.c_matrix = self.matrix - self.m.T
 
         # Calculate covariance of centered matrix
         my_cov = np.cov(self.c_matrix, rowvar=False)
@@ -184,6 +184,37 @@ class My_pca:
         return (self.eigen_values, self.eigen_vectors, self.projection)
 
 
+    def inverse(self, data):
+        """
+        Defer the calculation of the inverse to the desired algorithm
+        """
+        if self.algo == Algo.HOMEBREW:
+            return self.inverse_homebrew_(data)
+        else:
+            return self.inverse_scikit_(data)
+
+
+    def inverse_scikit_(self, data):
+        """
+        Compute the inverse of the transform using Scikit
+        """
+        pca = PCA(self.nb_components)
+        pca.fit(data)
+        data_pca = pca.transform(data)
+        return pca.inverse_transform(data_pca)
+
+
+    def inverse_homebrew_(self, data):
+        """
+        Compute the inverse of the transform using Homebrew
+        """
+        reduced = self.eigen_vectors.T.dot(data[2].T).T 
+
+        reduced_uncentered = reduced + self.m.T
+
+        return reduced_uncentered
+
+        
     def draw(self):
         """
         Draws the projection.
@@ -191,11 +222,14 @@ class My_pca:
         if self.show_graph == False:
             return
 
-        plt.plot(data[:, 0], data[:, 1], 'bo')
+        plt.title("Dataset compared \n with it's transformation")
+        plt.plot(data[:, 0], data[:, 1], 'bo', label="Original Data")
         if self.nb_components == 2:
-            plt.plot(self.projection[:, 0], self.projection[:, 1], 'xr')
+            plt.plot(self.projection[:, 0], self.projection[:, 1], 'xr', label="Transformed dataset. \n(2 eigen vectors)")
         elif self.nb_components == 1:
-            plt.plot(self.projection, np.zeros_like(self.projection), 'xr', label="Transformed dataset")
+            plt.plot(self.projection, np.zeros_like(self.projection), 'xr', label="Transformed dataset. \n(1 eigen vector)")
+
+        plt.legend(loc='best')
         plt.show()
 
 
@@ -281,8 +315,10 @@ def reflection_1():
     my_homebrew.show_graph = False
     my_homebrew.transform(data)
 
-    plt.plot(my_scikit.projection, np.zeros_like(my_scikit.projection), 'or', label="my_scikit Transformed dataset")
-    plt.plot(my_homebrew.projection, np.zeros_like(my_homebrew.projection), 'xb', label="my_homebrew Transformed dataset")
+    plt.title("Comparing Scikit and Homebrew projections")
+    plt.plot(my_scikit.projection, np.zeros_like(my_scikit.projection), 'or', label="Scikit transformed dataset")
+    plt.plot(my_homebrew.projection, np.zeros_like(my_homebrew.projection), 'xb', label="Homebrew transformed dataset")
+    plt.legend(loc='best')
     plt.show()
 
 
@@ -294,6 +330,13 @@ def reflection_2():
     Comment on the differences between original and transformed data in the
     cell directly below your plot. In your comment, explain why and how PCA
     can be used for dimensionality reduction
+    
+    NOTE:
+    =====    
+    In the notes there is a mention of the inverse transform.
+    Here we are using the inverse transform to figure out how close the
+    inverse will be from the original dataset.
+
     """
     print("#"*80)
     print("Reflection Question 2")
@@ -302,11 +345,21 @@ def reflection_2():
     my_homebrew = My_pca()
     my_homebrew.algo = Algo.HOMEBREW
     my_homebrew.nb_components = 1
-    my_homebrew.transform(data)
-
-
+    transformed_data = my_homebrew.transform(data)
+    
+    reduced_data = my_homebrew.inverse(transformed_data)
+    
+    plt.title("Dataset compared \n with its reduced form")
+    plt.plot(data[:,0], data[:,1], 'or', label='Original data') 
+    plt.plot(reduced_data[:,0], reduced_data[:,1],'xg', label='Reduced data') 
+    plt.legend(loc='best')
+    plt.show()
+    
+       
+    
 data = build_dataset()
-#test()
-test_sckikit_nb_components_1_and_2()
+
+test()
+#test_sckikit_nb_components_1_and_2()
 #reflection_1()
 #reflection_2()
