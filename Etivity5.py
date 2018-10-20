@@ -41,7 +41,7 @@ class My_pca:
         Steps:
         ======
         1) Find the mean of the dataset
-        2) Center the dataset around the mean
+        2) Center the dataset around the mean of each column
         3) Calculate the covariance of the centered dataset
         4) Find the eigen values and eigen vectors using the covariance
         5) Order the eigen vectors based on their associated eigen values
@@ -51,17 +51,12 @@ class My_pca:
         self.matrix = matrix
         
         # Calculate mean values of each column from dataset
-        m0 = np.mean(self.matrix[:,0])
-        m1 = np.mean(self.matrix[:,1])
+        m = np.mean(self.matrix.T, axis=1)
         
-        # Center the columns by subtracting the corresponding mean
-        c0 = matrix[:,0] - m0
-        c1 = matrix[:,1] - m1
-        
-        # Create a centered matrix 
+        # Center the columns by subtracting the corresponding mean        
         self.c_matrix = []
-        self.c_matrix = np.append(c0, c1, axis=1)
-        
+        self.c_matrix = self.matrix - m.T
+
         # Calculate covariance of centered matrix
         my_cov = np.cov(self.c_matrix, rowvar=False)        
     
