@@ -240,7 +240,7 @@ def build_dataset():
     a_x = 0.05
     a_y = 10
 
-    data =  np.matrix([[n*(1+a_x*(rand.random()-0.5)),4*n+ a_y*(rand.random()-0.5)] for n in range(20)])
+    data = np.array ([[n * (1 + a_x * (rand.random()-0.5)), 4 * n + a_y * (rand.random() - 0.5)] for n in range(20)])
 
     print("Data:\n", data)
     print(data.shape)
@@ -360,6 +360,6 @@ def reflection_2():
 data = build_dataset()
 
 test()
-#test_sckikit_nb_components_1_and_2()
-#reflection_1()
-#reflection_2()
+test_sckikit_nb_components_1_and_2()
+reflection_1()
+reflection_2()
