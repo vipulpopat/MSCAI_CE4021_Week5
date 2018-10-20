@@ -1,4 +1,5 @@
 
+
 import numpy as np
 import random as rand
 import matplotlib.pyplot as plt
@@ -14,11 +15,7 @@ class Log:
 class My_pca:
     """
     Perform the PCA on a dataset
-    
-    There is a lot of log statements in this class. I intend to remove
-    them in the final code. Leaving them in place for the time being as they
-    are useful for debugging. 
-        
+            
     """
 
     log_level = Log.INFO
@@ -39,6 +36,17 @@ class My_pca:
         
     def fit(self, matrix):
         """ 
+        Fit the model with the matrix
+        
+        Steps:
+        ======
+        1) Find the mean of the dataset
+        2) Center the dataset around the mean
+        3) Calculate the covariance of the centered dataset
+        4) Find the eigen values and eigen vectors using the covariance
+        5) Order the eigen vectors based on their associated eigen values
+        6) Only keep as many eigen vectors as defined in nb_components
+
         """
         self.matrix = matrix
         
@@ -103,11 +111,14 @@ class My_pca:
         
 
     def draw(self):
+        """
+        Draws the projection of the centered dataset.
+        """
         plt.plot(data[:,0], data[:,1], 'bo')
         if self.nb_components == 2:
             plt.plot(self.projection[:,0], self.projection[:,1], 'xr')
         elif self.nb_components == 1:
-            plt.plot(self.projection, np.zeros_like(self.projection),'xr', label="MyPCA Transformed dataset")            
+            plt.plot(self.projection, np.zeros_like(self.projection),'xr', label="Transformed dataset")            
         plt.show()
         
 
@@ -165,7 +176,7 @@ def test():
     
     # Please note that the user can call the fit() API also. 
     # We are not doing it here because fit() is called by transform() internally
-    # So this API works my_pca.fit(data) but for brevity's sake I am simply 
+    # So this my_pca.fit(data) works but for brevity's sake I am simply 
     # calling my_pca.transform(data)
     my_pca.nb_components=2
     my_pca.transform(data)
